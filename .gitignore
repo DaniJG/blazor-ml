@@ -1,0 +1,37 @@
+.DS_Store
+node_modules/
+/dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# C# Build results
+.vs/
+bin/
+obj/
+server/[Dd]ebug/
+server/[Dd]ebugPublic/
+server/[Rr]elease/
+server/[Rr]eleases/
+server/x64/
+server/x86/
+server/build/
+server/bld/
+server/bin/
+server/Bin/
+server/obj/
+server/Obj/

@@ -1,0 +1,112 @@
+@page "/identify"
+
+@using System.IO
+@using System.Drawing
+@using ModelBuilder.DataModel
+@using BlazorInputFile
+@using Microsoft.Extensions.Configuration
+@using Microsoft.Extensions.ML
+@inject IConfiguration Configuration
+@inject PredictionEnginePool<ImageInputData, ImageLabelPredictions> PredictionEnginePool
+
+<h1>Identify image</h1>
+
+<p>This component alllows sending an image to run the image recognition model.</p>
+
+@*
+Uses the BlazorFileInput component: http://blog.stevensanderson.com/2019/09/13/blazor-inputfile/
+Note how the "accept" attribute gets passed to the rendered input HTML element even when not declared explicitly as a parameter by the InputFile component
+See: https://docs.microsoft.com/en-us/aspnet/core/blazor/components?view=aspnetcore-3.1#attribute-splatting-and-arbitrary-parameters
+*@
+<InputFile OnChange="HandleFileSelected" accept="image/*"/>
+
+@if (file != null)
+{
+    <p>Name: @file.Name</p>
+    <p>Size in bytes: @file.Size</p>
+    <p>Last modified date: @file.LastModified.ToShortDateString()</p>
+    <p>Content type (not always supplied by the browser): @file.Type</p>
+
+    <button class="btn btn-primary" @onclick="ClassifySelectedImage">Classify image</button>
+
+    @if (imageClassification != null && imageClassification.Probability > 0.7)
+    {
+       <strong>Predicted as <em>@imageClassification.PredictedLabel</em> with <em>@imageClassification.Probability</em> probability</strong>
+    }
+    else if (imageClassification != null)
+    {
+       <strong>Best prediction only reached <em>@imageClassification.Probability</em> probability for <em>@imageClassification.PredictedLabel</em></strong>
+    }
+}
+
+@code {
+    IFileListEntry file;
+    ImagePredictedLabelWithProbability imageClassification;
+
+    void HandleFileSelected(IFileListEntry[] files)
+    {
+        file = files.FirstOrDefault();
+        imageClassification = null;
+    }
+
+    async Task ClassifySelectedImage()
+    {
+
+        // TODO: the classification depends on System.Drawing which needs some libraries to be installed in mac/linux
+        // There are alternatives to Bitmap, like ImageSharp, but would that work with ML.NET ????
+        // https://www.hanselman.com/blog/HowDoYouUseSystemDrawingInNETCore.aspx
+        // Can install with: brew install mono-libgdiplus
+
+        MemoryStream imageMemoryStream = new MemoryStream();
+        await file.Data.CopyToAsync(imageMemoryStream);
+
+        // Convert to Bitmap
+        Bitmap bitmapImage = (Bitmap)Image.FromStream(imageMemoryStream);
+
+        // Set the specific image data into the ImageInputData type used in the DataView
+        ImageInputData imageInputData = new ImageInputData { Image = bitmapImage };
+
+        // Predict code for provided image
+        ImageLabelPredictions imageLabelPredictions = PredictionEnginePool.Predict(imageInputData);
+
+        // Predict the image's label (The one with highest probability)
+        imageClassification = FindBestLabelWithProbability(imageLabelPredictions, imageInputData);
+    }
+
+    ImagePredictedLabelWithProbability FindBestLabelWithProbability(ImageLabelPredictions imageLabelPredictions, ImageInputData imageInputData)
+    {
+        // Read TF model's labels (labels.txt) to classify the image across those labels
+        // TODO: ideally this happens during startup as part of buidling an "ImageClassifier" service
+        var labels = ReadLabels();
+
+        // Set a single label as predicted or even none if probabilities were lower than 70%
+        float[] probabilities = imageLabelPredictions.PredictedLabels;
+        return GetBestLabel(labels, probabilities);
+    }
+
+    private ImagePredictedLabelWithProbability GetBestLabel(string[] labels, float[] probs)
+    {
+        var max = probs.Max();
+        var index = probs.AsSpan().IndexOf(max);
+        return new ImagePredictedLabelWithProbability()
+        {
+          PredictedLabel = labels[index],
+          Probability = max
+        };
+    }
+
+    private string[] ReadLabels()
+    {
+        string labelsLocation = GetPathFromBinFolder(Path.Combine("TFInceptionModel", "imagenet_comp_graph_label_strings.txt"));
+        return System.IO.File.ReadAllLines(labelsLocation);
+    }
+
+    private static string GetPathFromBinFolder(string relativePath)
+    {
+        FileInfo _dataRoot = new FileInfo(typeof(Program).Assembly.Location);
+        string assemblyFolderPath = _dataRoot.Directory.FullName;
+
+        string fullPath = Path.Combine(assemblyFolderPath, relativePath);
+        return fullPath;
+    }
+}
