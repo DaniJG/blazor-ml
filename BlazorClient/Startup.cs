@@ -36,6 +36,8 @@ namespace BlazorClient
             // Add ML.NET prediction model in the recommended way for a web app: https://docs.microsoft.com/en-us/dotnet/machine-learning/how-to-guides/serve-model-web-api-ml-net
             services.AddPredictionEnginePool<ImageInputData, ImageLabelPredictions>()
                     .FromFile(GetPathFromBinFolder("PredictionModel.zip"));
+            // Add classifier service which uses the prediction model
+            services.AddSingleton<ImageClassificationService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

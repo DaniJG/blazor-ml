@@ -1,13 +1,9 @@
 @page "/identify"
 
 @using System.IO
-@using System.Drawing
-@using ModelBuilder.DataModel
+@using BlazorClient.Data
 @using BlazorInputFile
-@using Microsoft.Extensions.Configuration
-@using Microsoft.Extensions.ML
-@inject IConfiguration Configuration
-@inject PredictionEnginePool<ImageInputData, ImageLabelPredictions> PredictionEnginePool
+@inject ImageClassificationService ClassificationService
 
 <h1>Identify image</h1>
 
@@ -29,84 +25,32 @@ See: https://docs.microsoft.com/en-us/aspnet/core/blazor/components?view=aspnetc
 
     <button class="btn btn-primary" @onclick="ClassifySelectedImage">Classify image</button>
 
-    @if (imageClassification != null && imageClassification.Probability > 0.7)
+    @if (classifiedImage != null && classifiedImage.Probability > 0.7)
     {
-       <strong>Predicted as <em>@imageClassification.PredictedLabel</em> with <em>@imageClassification.Probability</em> probability</strong>
+       <strong>Predicted as <em>@classifiedImage.Label</em> with <em>@classifiedImage.Probability</em> probability</strong>
     }
-    else if (imageClassification != null)
+    else if (classifiedImage != null)
     {
-       <strong>Best prediction only reached <em>@imageClassification.Probability</em> probability for <em>@imageClassification.PredictedLabel</em></strong>
+       <strong>Best prediction only reached <em>@classifiedImage.Probability</em> probability for <em>@classifiedImage.Label</em></strong>
     }
 }
 
 @code {
     IFileListEntry file;
-    ImagePredictedLabelWithProbability imageClassification;
+    ClassifiedImage classifiedImage;
 
     void HandleFileSelected(IFileListEntry[] files)
     {
         file = files.FirstOrDefault();
-        imageClassification = null;
+        classifiedImage = null;
     }
 
     async Task ClassifySelectedImage()
     {
-
-        // TODO: the classification depends on System.Drawing which needs some libraries to be installed in mac/linux
-        // There are alternatives to Bitmap, like ImageSharp, but would that work with ML.NET ????
-        // https://www.hanselman.com/blog/HowDoYouUseSystemDrawingInNETCore.aspx
-        // Can install with: brew install mono-libgdiplus
-
+        // Convert BlazorInputFile selected file into a memory stream
         MemoryStream imageMemoryStream = new MemoryStream();
         await file.Data.CopyToAsync(imageMemoryStream);
-
-        // Convert to Bitmap
-        Bitmap bitmapImage = (Bitmap)Image.FromStream(imageMemoryStream);
-
-        // Set the specific image data into the ImageInputData type used in the DataView
-        ImageInputData imageInputData = new ImageInputData { Image = bitmapImage };
-
-        // Predict code for provided image
-        ImageLabelPredictions imageLabelPredictions = PredictionEnginePool.Predict(imageInputData);
-
-        // Predict the image's label (The one with highest probability)
-        imageClassification = FindBestLabelWithProbability(imageLabelPredictions, imageInputData);
-    }
-
-    ImagePredictedLabelWithProbability FindBestLabelWithProbability(ImageLabelPredictions imageLabelPredictions, ImageInputData imageInputData)
-    {
-        // Read TF model's labels (labels.txt) to classify the image across those labels
-        // TODO: ideally this happens during startup as part of buidling an "ImageClassifier" service
-        var labels = ReadLabels();
-
-        // Set a single label as predicted or even none if probabilities were lower than 70%
-        float[] probabilities = imageLabelPredictions.PredictedLabels;
-        return GetBestLabel(labels, probabilities);
-    }
-
-    private ImagePredictedLabelWithProbability GetBestLabel(string[] labels, float[] probs)
-    {
-        var max = probs.Max();
-        var index = probs.AsSpan().IndexOf(max);
-        return new ImagePredictedLabelWithProbability()
-        {
-          PredictedLabel = labels[index],
-          Probability = max
-        };
-    }
-
-    private string[] ReadLabels()
-    {
-        string labelsLocation = GetPathFromBinFolder(Path.Combine("TFInceptionModel", "imagenet_comp_graph_label_strings.txt"));
-        return System.IO.File.ReadAllLines(labelsLocation);
-    }
-
-    private static string GetPathFromBinFolder(string relativePath)
-    {
-        FileInfo _dataRoot = new FileInfo(typeof(Program).Assembly.Location);
-        string assemblyFolderPath = _dataRoot.Directory.FullName;
-
-        string fullPath = Path.Combine(assemblyFolderPath, relativePath);
-        return fullPath;
+        // Classify with the classification service that uses the ML.NET model underneath
+        classifiedImage = ClassificationService.Classify(imageMemoryStream);
     }
 }
