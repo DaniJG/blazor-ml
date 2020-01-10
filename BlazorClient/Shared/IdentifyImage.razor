@@ -1,95 +1,71 @@
-@using System.IO
 @using BlazorClient.Data
-@using BlazorInputFile
 @inject ImageClassificationService ClassificationService
-@implements IDisposable
 
-<div class="card">
+<div class="card mb-2">
   <div class="card-header">
-    @File.Name
+    @Image.File.Name
   </div>
 
-  @if (base64Image == null)
+  @if (Image.Base64Image != null)
   {
-    <p class="text-center my-5">
-      <div class="loader-icon">Loading...</div>
-      <span>Loaded @UploadedPercentage.ToString("0")%</span>
-    </p>
-  }
-  else
-  {
-    <img src="data:image/png;base64, @base64Image" class="card-img-top" alt="@File.Name">
+    <img src="data:image/png;base64, @Image.Base64Image" class="card-img-top" alt="@Image.File.Name">
   }
 
   <div class="card-body">
-    <p class="card-text">
-      @if (classificationResult != null && classificationResult.Probability > 0.7)
-      {
-        <span>
+    @if (Image.ClassificationResult != null)
+    {
+      <p class="card-text">
+        @if (Image.ClassificationResult.Probability > 0.7)
+        {
           <i class="text-success oi oi-circle-check"></i>
-          Predicted as <strong>@classificationResult.Label</strong> with <strong>@classificationResult.Probability</strong> probability
-        </span>
-      }
-      else if (classificationResult != null)
-      {
-        <span>
+        }
+        else
+        {
           <i class="text-danger oi oi-warning"></i>
-          Best prediction only reached <strong>@classificationResult.Probability</strong> probability for <strong>@classificationResult.Label</strong>
-        </span>
-      }
-    </p>
-    <p class="card-text">
-      <button class="btn btn-secondary" @onclick="TriggerOnClear">Clear</button>
-    </p>
+        }
+        Classified as <strong>@Image.ClassificationResult.Label</strong> with <strong>@Image.ClassificationResult.Probability</strong> probability
+      </p>
+      <p class="card-text">
+        <button class="btn btn-secondary" @onclick="TriggerOnClear">Clear</button>
+      </p>
+    }
+    else
+    {
+      <p class="card-text text-center my-2">
+        <div class="loader-icon">Loading...</div>
+        <span>Loaded @Image.UploadedPercentage.ToString("0")%</span>
+      </p>
+    }
   </div>
 </div>
 
 @code {
     // See Component parameters: https://docs.microsoft.com/en-us/aspnet/core/blazor/components?view=aspnetcore-3.1#component-parameters
     [Parameter]
-    public IFileListEntry File { get; set; }
+    public SelectedImage Image { get; set; }
 
     // See parent-child component event callbacks: https://docs.microsoft.com/en-us/aspnet/core/blazor/components?view=aspnetcore-3.1#eventcallback
     [Parameter]
-    public EventCallback<IFileListEntry> OnClear { get; set; }
-
-    bool IsUploading => File.Data.Position > 0 && File.Data.Position < File.Size;
-    double UploadedPercentage => 100.0 * File.Data.Position / File.Size;
-    MemoryStream fileStream;
-    string base64Image;
-    ImageClassificationResult classificationResult;
+    public EventCallback<SelectedImage> OnClear { get; set; }
 
     // See component Lifecycle methods: https://docs.microsoft.com/en-us/aspnet/core/blazor/lifecycle?view=aspnetcore-3.1
     protected override async Task OnInitializedAsync()
     {
-        // Invoke StateHasChanged when reading data so the UI is updated with the uploaded percentage
-        File.OnDataRead += (sender, eventArgs) => InvokeAsync(StateHasChanged);
+        if (Image.ClassificationResult != null) return;
 
-        // Download File contents into a memory stream, so we can later hand it over to the ML.NET service
-        fileStream = new MemoryStream();
-        if (File.Data.Position > 0) return;
-        await File.Data.CopyToAsync(fileStream);
-
-        // Get a base64 so we can render an image preview
-        base64Image = Convert.ToBase64String(fileStream.ToArray());
-
-        // Classify with the classification service that uses the ML.NET model underneath
-        classificationResult = ClassificationService.Classify(fileStream);
+        // Download File contents into a memory stream, so we can hand it over to the ML.NET service
+        var fileStream = await Image.Upload(
+          // Invoke StateHasChanged while reading data so the UX refreshes showing the upload percentage
+          () => InvokeAsync(StateHasChanged)
+        );
+        // Classify with the classification service that uses the ML.NET model
+        Image.ClassificationResult = ClassificationService.Classify(fileStream);
+        fileStream.Dispose();
     }
 
     async Task TriggerOnClear()
     {
-        fileStream = null;
-        base64Image = null;
-        classificationResult = null;
-
         // Trigger parent component callback
-        await OnClear.InvokeAsync(File);
-    }
-
-    public void Dispose()
-    {
-        System.Diagnostics.Debug.WriteLine($"Disposing {File.Name}");
-        // fileStream.Dispose();
+        await OnClear.InvokeAsync(Image);
     }
 }

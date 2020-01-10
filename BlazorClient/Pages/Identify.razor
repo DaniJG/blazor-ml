@@ -20,14 +20,19 @@
     Note how the "accept" attribute gets passed to the rendered input HTML element even when not declared explicitly as a parameter by the InputFile component
     See: https://docs.microsoft.com/en-us/aspnet/core/blazor/components?view=aspnetcore-3.1#attribute-splatting-and-arbitrary-parameters
     *@
-    <InputFile OnChange="OnImageFileSelected" accept="image/*"/>
+    <InputFile multiple OnChange="OnImageFileSelected" accept="image/*"/>
   </form>
 
   <div class="row my-4">
-    @foreach (var file in selectedFiles)
+    @foreach (var image in selectedImages)
     {
       <div class="col-4">
-        <IdentifyImage @key="file.Name" File="file" OnClear="OnClear" />
+        @*
+        Notice the usage of the @key parameter so images can be correctly removed
+        (Be warned: Components for images after the one being removed can still be removed by Blazor and re-initialized, which might take you by surprise if you have logic dependent on the lifecycle!)
+        See: https://docs.microsoft.com/en-us/aspnet/core/blazor/components?view=aspnetcore-3.1#use-key-to-control-the-preservation-of-elements-and-components
+        *@
+        <IdentifyImage @key="image" Image="image" OnClear="OnClear" />
       </div>
     }
   </div>
@@ -35,18 +40,16 @@
 
 
 @code {
-    List<IFileListEntry> selectedFiles = new List<IFileListEntry>();
+    List<SelectedImage> selectedImages = new List<SelectedImage>();
 
     void OnImageFileSelected(IFileListEntry[] files)
     {
-        selectedFiles.AddRange(files);
+        selectedImages.AddRange(
+          files.Select(f => new SelectedImage { File = f }));
     }
 
-    void OnClear(IFileListEntry file)
+    void OnClear(SelectedImage image)
     {
-        // System.Diagnostics.Trace.WriteLine(file.Name);
-        selectedFiles.Remove(file);
-        // selectedFiles = selectedFiles.Where(f => f != file).ToList();
-        // selectedFiles = selectedFiles.Where(f => f.Name != selectedFiles.)
+        selectedImages.Remove(image);
     }
 }
