@@ -21,7 +21,7 @@ namespace BlazorClient.Data
             _labels = System.IO.File.ReadAllLines(labelsFileLocation);
         }
 
-        public ClassifiedImage Classify(MemoryStream image)
+        public ImageClassificationResult Classify(MemoryStream image)
         {
             // TODO: the classification depends on System.Drawing which needs some libraries to be installed in mac/linux
             // There are alternatives to Bitmap, like ImageSharp, but would that work with ML.NET ????
@@ -41,7 +41,7 @@ namespace BlazorClient.Data
             float[] probabilities = imageLabelPredictions.PredictedLabels;
             var maxProbability = probabilities.Max();
             var maxProbabilityIndex = probabilities.AsSpan().IndexOf(maxProbability);
-            return new ClassifiedImage()
+            return new ImageClassificationResult()
             {
               Label = _labels[maxProbabilityIndex],
               Probability = maxProbability

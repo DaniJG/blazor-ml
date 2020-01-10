@@ -1,6 +1,6 @@
 namespace BlazorClient.Data
 {
-    public class ClassifiedImage
+    public class ImageClassificationResult
     {
         public string Label;
         public float Probability { get; set; }

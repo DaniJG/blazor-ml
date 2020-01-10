@@ -1,56 +1,52 @@
 @page "/identify"
 
 @using System.IO
+@using System.Linq
+@using System.Collections.Generic
 @using BlazorClient.Data
 @using BlazorInputFile
 @inject ImageClassificationService ClassificationService
 
-<h1>Identify image</h1>
+<div class="container">
+  <h1>Identify image</h1>
 
-<p>This component alllows sending an image to run the image recognition model.</p>
+  <p>
+    This component alllows sending an image to run the image recognition model.
+    Select an image to start the upload and recognition process.
+  </p>
+  <form>
+    @*
+    Uses the BlazorFileInput component: http://blog.stevensanderson.com/2019/09/13/blazor-inputfile/
+    Note how the "accept" attribute gets passed to the rendered input HTML element even when not declared explicitly as a parameter by the InputFile component
+    See: https://docs.microsoft.com/en-us/aspnet/core/blazor/components?view=aspnetcore-3.1#attribute-splatting-and-arbitrary-parameters
+    *@
+    <InputFile OnChange="OnImageFileSelected" accept="image/*"/>
+  </form>
 
-@*
-Uses the BlazorFileInput component: http://blog.stevensanderson.com/2019/09/13/blazor-inputfile/
-Note how the "accept" attribute gets passed to the rendered input HTML element even when not declared explicitly as a parameter by the InputFile component
-See: https://docs.microsoft.com/en-us/aspnet/core/blazor/components?view=aspnetcore-3.1#attribute-splatting-and-arbitrary-parameters
-*@
-<InputFile OnChange="HandleFileSelected" accept="image/*"/>
-
-@if (file != null)
-{
-    <p>Name: @file.Name</p>
-    <p>Size in bytes: @file.Size</p>
-    <p>Last modified date: @file.LastModified.ToShortDateString()</p>
-    <p>Content type (not always supplied by the browser): @file.Type</p>
-
-    <button class="btn btn-primary" @onclick="ClassifySelectedImage">Classify image</button>
-
-    @if (classifiedImage != null && classifiedImage.Probability > 0.7)
+  <div class="row my-4">
+    @foreach (var file in selectedFiles)
     {
-       <strong>Predicted as <em>@classifiedImage.Label</em> with <em>@classifiedImage.Probability</em> probability</strong>
+      <div class="col-4">
+        <IdentifyImage @key="file.Name" File="file" OnClear="OnClear" />
+      </div>
     }
-    else if (classifiedImage != null)
-    {
-       <strong>Best prediction only reached <em>@classifiedImage.Probability</em> probability for <em>@classifiedImage.Label</em></strong>
-    }
-}
+  </div>
+</div>
+
 
 @code {
-    IFileListEntry file;
-    ClassifiedImage classifiedImage;
+    List<IFileListEntry> selectedFiles = new List<IFileListEntry>();
 
-    void HandleFileSelected(IFileListEntry[] files)
+    void OnImageFileSelected(IFileListEntry[] files)
     {
-        file = files.FirstOrDefault();
-        classifiedImage = null;
+        selectedFiles.AddRange(files);
     }
 
-    async Task ClassifySelectedImage()
+    void OnClear(IFileListEntry file)
     {
-        // Convert BlazorInputFile selected file into a memory stream
-        MemoryStream imageMemoryStream = new MemoryStream();
-        await file.Data.CopyToAsync(imageMemoryStream);
-        // Classify with the classification service that uses the ML.NET model underneath
-        classifiedImage = ClassificationService.Classify(imageMemoryStream);
+        // System.Diagnostics.Trace.WriteLine(file.Name);
+        selectedFiles.Remove(file);
+        // selectedFiles = selectedFiles.Where(f => f != file).ToList();
+        // selectedFiles = selectedFiles.Where(f => f.Name != selectedFiles.)
     }
 }
