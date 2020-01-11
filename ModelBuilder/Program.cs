@@ -8,11 +8,11 @@ namespace ModelBuilder
         static void Main(string[] args)
         {
             var tensorFlowModelPath = "TFInceptionModel/tensorflow_inception_graph.pb";
-            var mlNetModelPath = "PredictionModel.zip";
-            var modelBuilder = new ModelBuilder(tensorFlowModelPath);
-            modelBuilder.SaveMLNetModel(mlNetModelPath);
+            var mlnetOutputZipFilePath = "PredictionModel.zip";
+            var modelBuilder = new ModelBuilder(tensorFlowModelPath, mlnetOutputZipFilePath);
+            modelBuilder.Run();
 
-            Console.WriteLine($"Generated {mlNetModelPath}");
+            Console.WriteLine($"Generated {mlnetOutputZipFilePath}");
         }
     }
 }

@@ -10,50 +10,49 @@ namespace ModelBuilder
 {
     public class ModelBuilder
     {
-        private readonly MLContext _mlContext;
-        private readonly ITransformer _mlModel;
+        private string _tensorFlowModelFilePath;
+        private string _mlnetOutputZipFilePath;
 
-        public ModelBuilder(string tensorFlowModelFilePath)
+        public ModelBuilder(string tensorFlowModelFilePath, string mlnetOutputZipFilePath)
         {
-            _mlContext = new MLContext();
-
-            // Model creation and pipeline definition for images needs to run just once, so calling it from the constructor:
-            _mlModel = SetupMlnetModel(tensorFlowModelFilePath);
+            _tensorFlowModelFilePath = tensorFlowModelFilePath;
+            _mlnetOutputZipFilePath = mlnetOutputZipFilePath;
         }
 
-        private ITransformer SetupMlnetModel(string tensorFlowModelFilePath)
+        public void Run()
         {
-            var pipeline = _mlContext.Transforms.ResizeImages(
+            // Create new model context
+            var mlContext = new MLContext();
+
+            // Define the model pipeline:
+            //    1. loading and resizing the image
+            //    2. extracting image pixels
+            //    3. running pre-trained TensorFlow model
+            var pipeline = mlContext.Transforms.ResizeImages(
                     outputColumnName: TensorFlowModelSettings.inputTensorName,
                     imageWidth: ImageSettings.imageWidth,
                     imageHeight: ImageSettings.imageHeight,
                     inputColumnName: nameof(ImageInputData.Image)
                 )
-                .Append(_mlContext.Transforms.ExtractPixels(
+                .Append(mlContext.Transforms.ExtractPixels(
                     outputColumnName: TensorFlowModelSettings.inputTensorName,
-                    interleavePixelColors: ImageSettings.channelsLast,
-                    offsetImage: ImageSettings.mean)
+                    interleavePixelColors: ImageSettings.interleavePixelColors,
+                    offsetImage: ImageSettings.offsetImage)
                 )
-                .Append(_mlContext.Model.LoadTensorFlowModel(tensorFlowModelFilePath)
+                .Append(mlContext.Model.LoadTensorFlowModel(_tensorFlowModelFilePath)
                     .ScoreTensorFlowModel(
                         outputColumnNames: new[] { TensorFlowModelSettings.outputTensorName },
                         inputColumnNames: new[] { TensorFlowModelSettings.inputTensorName },
                         addBatchDimensionInput: true));
 
-            ITransformer mlModel = pipeline.Fit(CreateEmptyDataView());
+            // Train the model
+            // Since we are simply using a pre-trained TensorFlow model, we can "train" it against an empty dataset
+            var emptyTrainingSet = mlContext.Data.LoadFromEnumerable<ImageInputData>(new List<ImageInputData>());
+            ITransformer mlModel = pipeline.Fit(emptyTrainingSet);
 
-            return mlModel;
-        }
-        private IDataView CreateEmptyDataView()
-        {
-            // Create empty DataView ot Images. We just need the schema to call fit()
-            return _mlContext.Data.LoadFromEnumerable<ImageInputData>(new List<ImageInputData>());
-        }
-
-        public void SaveMLNetModel(string mlnetModelFilePath)
-        {
-            // Save/persist the model to a .ZIP file to be loaded by the PredictionEnginePool
-            _mlContext.Model.Save(_mlModel, null, mlnetModelFilePath);
+            // Save/persist the model to a .ZIP file
+            // This will be loaded into a PredictionEnginePool by the Blazor application, so it can classify new images
+            mlContext.Model.Save(mlModel, null, _mlnetOutputZipFilePath);
         }
 
         public struct ImageSettings
@@ -62,8 +61,8 @@ namespace ModelBuilder
             // Reusing the same settings from where it was downloaded: https://github.com/dotnet/machinelearning-samples/tree/master/samples/csharp/getting-started/DeepLearning_ImageClassification_TensorFlow
             public const int imageHeight = 224;
             public const int imageWidth = 224;
-            public const float mean = 117;         //offsetImage
-            public const bool channelsLast = true; //interleavePixelColors
+            public const float offsetImage = 117;
+            public const bool interleavePixelColors = true;
         }
 
         // For checking tensor names, you can open the TF model .pb file with tools like Netron: https://github.com/lutzroeder/netron
