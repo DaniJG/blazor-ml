@@ -53,6 +53,17 @@ namespace ModelBuilder
             // Save/persist the model to a .ZIP file
             // This will be loaded into a PredictionEnginePool by the Blazor application, so it can classify new images
             mlContext.Model.Save(mlModel, null, _mlnetOutputZipFilePath);
+
+            // Optional code to load he model and try it making some prediction
+            DataViewSchema predictionPipelineSchema;
+            mlModel = mlContext.Model.Load(_mlnetOutputZipFilePath, out predictionPipelineSchema);
+            var predictionEngine = mlContext.Model.CreatePredictionEngine<ImageInputData, ImageLabelPredictions>(mlModel);
+            var image = (System.Drawing.Bitmap)System.Drawing.Bitmap.FromFile("../SampleImages/broccoli.jpg");
+            var prediction = predictionEngine.Predict(new ImageInputData{ Image = image });
+            var maxProbability = prediction.PredictedLabels.Max();
+            var labelIndex = prediction.PredictedLabels.AsSpan().IndexOf(maxProbability);
+            var allLabels = System.IO.File.ReadAllLines("TFInceptionModel/imagenet_comp_graph_label_strings.txt");
+            Console.WriteLine($"Test image broccoli.jpg predicted as '{allLabels[labelIndex]}' with probability {maxProbability}%");
         }
 
         public struct ImageSettings
