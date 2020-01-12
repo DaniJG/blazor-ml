@@ -1,11 +1,9 @@
 @page "/identify"
 
-@using System.IO
 @using System.Linq
 @using System.Collections.Generic
 @using BlazorClient.Data
 @using BlazorInputFile
-@inject ImageClassificationService ClassificationService
 
 <div class="container">
   <h1>Identify image</h1>
@@ -45,7 +43,7 @@
     void OnImageFileSelected(IFileListEntry[] files)
     {
         selectedImages.AddRange(
-          files.Select(f => new SelectedImage { File = f }));
+          files.Select(f => new SelectedImage(f)));
     }
 
     void OnClear(SelectedImage image)

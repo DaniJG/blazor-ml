@@ -3,12 +3,12 @@
 
 <div class="card mb-2">
   <div class="card-header">
-    @Image.File.Name
+    @Image.Name
   </div>
 
   @if (Image.Base64Image != null)
   {
-    <img src="data:image/png;base64, @Image.Base64Image" class="card-img-top" alt="@Image.File.Name">
+    <img src="data:image/png;base64, @Image.Base64Image" class="card-img-top" alt="@Image.Name">
   }
 
   <div class="card-body">
@@ -33,7 +33,9 @@
     {
       <p class="card-text text-center my-2">
         <div class="loader-icon">Loading...</div>
-        <span>Loaded @Image.UploadedPercentage.ToString("0")%</span>
+        <div class="progress">
+          <div class="progress-bar" role="progressbar" style="width: @Image.UploadedPercentage%" aria-valuenow="@Image.UploadedPercentage" aria-valuemin="0" aria-valuemax="100"/>
+        </div>
       </p>
     }
   </div>
@@ -51,16 +53,16 @@
     // See component Lifecycle methods: https://docs.microsoft.com/en-us/aspnet/core/blazor/lifecycle?view=aspnetcore-3.1
     protected override async Task OnInitializedAsync()
     {
+        // avoid re-running classification in case Blazor recreates components
+        // which I've noticed when removing elements from a list as in the case of the list of images in the parent page
         if (Image.ClassificationResult != null) return;
 
         // Download File contents into a memory stream, so we can hand it over to the ML.NET service
-        var fileStream = await Image.Upload(
-          // Invoke StateHasChanged while reading data so the UX refreshes showing the upload percentage
-          () => InvokeAsync(StateHasChanged)
-        );
-        // Classify with the classification service that uses the ML.NET model
-        Image.ClassificationResult = ClassificationService.Classify(fileStream);
-        fileStream.Dispose();
+        // Invoke StateHasChanged as data is read, so the upload percentage is updated in the UX
+        using(var fileStream = await Image.Upload(() => InvokeAsync(StateHasChanged)))
+        {
+          Image.ClassificationResult = ClassificationService.Classify(fileStream);
+        }
     }
 
     async Task TriggerOnClear()
