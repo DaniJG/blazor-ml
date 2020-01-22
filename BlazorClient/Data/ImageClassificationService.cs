@@ -17,7 +17,7 @@ namespace BlazorClient.Data
         {
             _predictionEnginePool = predictionEnginePool;
 
-            string labelsFileLocation = GetPathFromBinFolder(Path.Combine("TFInceptionModel", "imagenet_comp_graph_label_strings.txt"));
+            string labelsFileLocation = PathUtilities.GetPathFromBinFolder(Path.Combine("TFInceptionModel", "imagenet_comp_graph_label_strings.txt"));
             _labels = System.IO.File.ReadAllLines(labelsFileLocation);
         }
 
@@ -46,15 +46,6 @@ namespace BlazorClient.Data
               Label = _labels[maxProbabilityIndex],
               Probability = maxProbability
             };
-        }
-
-        private static string GetPathFromBinFolder(string relativePath)
-        {
-            FileInfo _dataRoot = new FileInfo(typeof(Program).Assembly.Location);
-            string assemblyFolderPath = _dataRoot.Directory.FullName;
-
-            string fullPath = Path.Combine(assemblyFolderPath, relativePath);
-            return fullPath;
         }
     }
 }

@@ -35,7 +35,7 @@ namespace BlazorClient
 
             // Add ML.NET prediction model in the recommended way for a web app: https://docs.microsoft.com/en-us/dotnet/machine-learning/how-to-guides/serve-model-web-api-ml-net
             services.AddPredictionEnginePool<ImageInputData, ImageLabelPredictions>()
-                    .FromFile(GetPathFromBinFolder("PredictionModel.zip"));
+                    .FromFile(PathUtilities.GetPathFromBinFolder("PredictionModel.zip"));
             // Add classifier service which uses the prediction model
             services.AddSingleton<ImageClassificationService>();
         }
@@ -64,15 +64,6 @@ namespace BlazorClient
                 endpoints.MapBlazorHub();
                 endpoints.MapFallbackToPage("/_Host");
             });
-        }
-
-        private static string GetPathFromBinFolder(string relativePath)
-        {
-            FileInfo _dataRoot = new FileInfo(typeof(Program).Assembly.Location);
-            string assemblyFolderPath = _dataRoot.Directory.FullName;
-
-            string fullPath = Path.Combine(assemblyFolderPath, relativePath);
-            return fullPath;
         }
     }
 }
