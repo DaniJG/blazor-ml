@@ -63,7 +63,7 @@ namespace ModelBuilder
             var maxProbability = prediction.PredictedLabels.Max();
             var labelIndex = prediction.PredictedLabels.AsSpan().IndexOf(maxProbability);
             var allLabels = System.IO.File.ReadAllLines("TFInceptionModel/imagenet_comp_graph_label_strings.txt");
-            Console.WriteLine($"Test image broccoli.jpg predicted as '{allLabels[labelIndex]}' with probability {maxProbability}%");
+            Console.WriteLine($"Test image broccoli.jpg predicted as '{allLabels[labelIndex]}' with probability {100 * maxProbability}%");
         }
 
         public struct ImageSettings

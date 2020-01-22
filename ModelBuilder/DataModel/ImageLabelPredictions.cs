@@ -6,6 +6,6 @@ namespace ModelBuilder.DataModel
     {
         // TODO: should match TensorFlowModelSettings.outputTensorName
         [ColumnName("softmax2")]
-        public float[] PredictedLabels;
+        public float[] PredictedLabels { get; set; }
     }
 }
