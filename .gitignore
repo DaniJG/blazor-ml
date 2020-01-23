@@ -11,7 +11,6 @@ yarn-error.log*
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
 
 # User-specific files
 *.suo
