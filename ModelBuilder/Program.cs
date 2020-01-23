@@ -12,7 +12,7 @@ namespace ModelBuilder
             var modelBuilder = new ModelBuilder(tensorFlowModelPath, mlnetOutputZipFilePath);
             modelBuilder.Run();
 
-            Console.WriteLine($"Generated {mlnetOutputZipFilePath}");
+            Console.WriteLine($"Generated {Path.GetFullPath(mlnetOutputZipFilePath)}");
         }
     }
 }
