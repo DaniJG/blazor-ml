@@ -7,7 +7,9 @@ Example application that shows how to integrate a Blazor server-side application
 
 
 ## Installation
-The solution contains 2 projects:
+Make sure you have the .NET Core SDK 3.1 installed (download [here](https://dotnet.microsoft.com/download)) and clone this repo.
+
+You will see a solution with 2 projects:
 
 - The `ModelBuilder` is used to generate the ML.NET model, which is then saved to a ZIP file for the Blazor app to classify uploaded images
   ```bash
@@ -23,6 +25,8 @@ The solution contains 2 projects:
     dotnet run
     # navigate to https://localhost:5001/identify
   ```
+
+There are sample images in the `SampleImages` folder (see [wikimedia.md](./SampleImages/wikimedia.md) for attribution) which you can use to test the application
 
 ### Mac/Linux users
 The code relies on System.Drawing in order to convert an image into a bitmap. While System.Drawing [is now part of .NET Core](https://www.hanselman.com/blog/HowDoYouUseSystemDrawingInNETCore.aspx) you will probably need to install its GDI+ dependencies:
