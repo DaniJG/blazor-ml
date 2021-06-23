@@ -5,6 +5,7 @@ Example application that shows how to integrate a Blazor server-side application
 - Users can upload images using the Blazor application, which are classified into one of 1000 labels using the ML.NET model.
 - The ML.NET model simply loads a pre-trained TensorFlow Google's inception model (available [here](https://github.com/dotnet/machinelearning-samples/tree/master/samples/csharp/getting-started/DeepLearning_ImageClassification_TensorFlow/ImageClassification/assets/inputs/inception))
 
+The application is discussed in detail in the article [Using Blazor, Tensorflow and ML.NET to Identify Images](https://www.dotnetcurry.com/aspnet-core/1537/blazor-ml-dotnet), published in the DotNetCurry magazine.
 
 ## Installation
 Make sure you have the .NET Core SDK 5.0 installed (download [here](https://dotnet.microsoft.com/download)) and clone this repo.
