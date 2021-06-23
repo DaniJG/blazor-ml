@@ -3,7 +3,6 @@
 @using System.Linq
 @using System.Collections.Generic
 @using BlazorClient.Data
-@using BlazorInputFile
 
 <div class="container">
   <h1>Identify image</h1>
@@ -40,10 +39,10 @@
 @code {
     List<SelectedImage> selectedImages = new List<SelectedImage>();
 
-    void OnImageFileSelected(IFileListEntry[] files)
+    void OnImageFileSelected(InputFileChangeEventArgs files)
     {
         selectedImages.AddRange(
-          files.Select(f => new SelectedImage(f)));
+          files.GetMultipleFiles(10).Select(f => new SelectedImage(f)));
     }
 
     void OnClear(SelectedImage image)

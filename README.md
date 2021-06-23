@@ -7,7 +7,7 @@ Example application that shows how to integrate a Blazor server-side application
 
 
 ## Installation
-Make sure you have the .NET Core SDK 3.1 installed (download [here](https://dotnet.microsoft.com/download)) and clone this repo.
+Make sure you have the .NET Core SDK 5.0 installed (download [here](https://dotnet.microsoft.com/download)) and clone this repo.
 
 You will see a solution with 2 projects:
 
@@ -18,7 +18,7 @@ You will see a solution with 2 projects:
   dotnet run
   # ML.NET model's zip saved to PredictionModel.zip
   ```
-- The `BlazorClient` provides the server-side Blazor app. Navigate the the *Identify Image* page (or `/identify`) to upload an image (using the [BlazorInputFile](http://blog.stevensanderson.com/2019/09/13/blazor-inputfile/) component), which will be classified using the previously saved ML.NET model
+- The `BlazorClient` provides the server-side Blazor app. Navigate the the *Identify Image* page (or `/identify`) to upload an image (using the [InputFile](https://docs.microsoft.com/en-us/aspnet/core/blazor/file-uploads?view=aspnetcore-5.0&pivots=webassembly) component), which will be classified using the previously saved ML.NET model
   ```bash
     cd BlazorClient
     dotnet build

@@ -5,12 +5,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BlazorInputFile" Version="0.1.0-preview-00002" />
-    <PackageReference Include="Microsoft.Extensions.ML" Version="1.4.0" />
+    <PackageReference Include="Microsoft.Extensions.ML" Version="1.5.5" />
   </ItemGroup>
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
 </Project>
